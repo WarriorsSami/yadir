@@ -1,7 +1,7 @@
 # Yadir
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/WarriorsSami/yadir/rust.yml)
-![Crates.io Version](https://img.shields.io/crates/v/yadir)
+[![Crates.io Version](https://img.shields.io/crates/v/yadir)](https://crates.io/crates/yadir)
 
 ### **Yadir is yet another dependency injection registry for Rust.**
 
