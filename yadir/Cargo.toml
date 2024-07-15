@@ -2,6 +2,14 @@
 name = "yadir"
 version = "0.1.0"
 edition = "2021"
+authors = ["Sami Barbut-Dica"]
+license-file = "LICENSE"
+readme = "../README.md"
+homepage = "https://github.com/WarriorsSami/yadir"
+repository = "https://github.com/WarriorsSami/yadir"
+description = "Yet Another Dependency Injection Registry for Rust"
+keywords = ["dependency-injection", "registry", "runtime"]
+categories = ["rust-patterns"]
 
 [dependencies]
 async-trait = "0.1.81"
