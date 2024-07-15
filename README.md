@@ -8,7 +8,7 @@
 
 Yadir's API is heavily inspired by the [Microsoft.Extensions.DependencyInjection](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection) library for .NET. It provides a simple and easy way to register and resolve dependencies in your Rust application at runtime.
 
-Its initial implementation is based on the [Registry design pattern](https://willcrichton.net/rust-api-type-patterns/registries.html), formulated by Will Crichton in its book about [Type-Driven API Design in Rust](https://willcrichton.net/rust-api-type-patterns/introduction.html).
+Its initial implementation is based on the [Registry design pattern](https://willcrichton.net/rust-api-type-patterns/registries.html), formulated by Will Crichton in his book about [Type-Driven API Design in Rust](https://willcrichton.net/rust-api-type-patterns/introduction.html).
 
 ### **Usage**
 
