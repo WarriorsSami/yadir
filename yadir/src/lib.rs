@@ -60,7 +60,7 @@ mod tests {
 
     #[async_trait]
     impl DIBuilder for Bar {
-        type Input = ();
+        type Input = deps!();
         type Output = Box<dyn Printer>;
 
         async fn build(_: Self::Input) -> Self::Output {
@@ -70,7 +70,7 @@ mod tests {
 
     #[async_trait]
     impl DIBuilder for Baz {
-        type Input = ();
+        type Input = deps!();
         type Output = Box<dyn Writer>;
 
         async fn build(_: Self::Input) -> Self::Output {

@@ -18,20 +18,26 @@ Its initial implementation is based on the [Registry design pattern](https://wil
 Add Yadir to your `Cargo.toml` file:
 ```toml
 [dependencies]
-yadir = "0.1.0"
+yadir = "0.2.0"
 ```
 
 Create a new registry and register your dependencies, after implementing the `DIBuilder` trait for each one of them:
 ```rust
-use crate::core::{DIBuilder, DIManager, DIObj};
+use yadir::core::contracts::DIBuilder;
+use yadir::core::primitives::{DIManager, DIObj};
+use yadir::{deps, let_deps};
 use async_trait::async_trait;
 use dyn_clone::{clone_trait_object, DynClone};
 
-// dyn-clone package is used to implement the Clone trait for boxed trait objects
 clone_trait_object!(Printer);
+clone_trait_object!(Writer);
 
-trait Printer: Send + Sync + DynClone {
+trait Printer: Sync + Send + DynClone {
     fn print(&self) -> String;
+}
+
+trait Writer: Sync + Send + DynClone {
+    fn write(&self) -> String;
 }
 
 #[derive(Clone)]
@@ -44,25 +50,42 @@ impl Printer for Bar {
 }
 
 #[derive(Clone)]
+struct Baz;
+
+impl Writer for Baz {
+    fn write(&self) -> String {
+        "baz".to_string()
+    }
+}
+
+#[derive(Clone)]
 struct Foo {
     printer: Box<dyn Printer>,
+    writer: Box<dyn Writer>,
 }
 
 impl Foo {
-    fn new(printer: Box<dyn Printer>) -> Self {
-        Self { printer }
+    fn new(printer: Box<dyn Printer>, writer: Box<dyn Writer>) -> Self {
+        Self { printer, writer }
     }
-
     fn print(&self) -> String {
-        format!("foo {}", self.printer.print())
+        format!("foo {} {}", self.printer.print(), self.writer.write())
     }
 }
 
 #[async_trait]
 impl DIBuilder for Bar {
-    type Input = ();
+    type Input = deps!();
     type Output = Box<dyn Printer>;
+    async fn build(_: Self::Input) -> Self::Output {
+        Box::new(Self)
+    }
+}
 
+#[async_trait]
+impl DIBuilder for Baz {
+    type Input = deps!();
+    type Output = Box<dyn Writer>;
     async fn build(_: Self::Input) -> Self::Output {
         Box::new(Self)
     }
@@ -70,28 +93,23 @@ impl DIBuilder for Bar {
 
 #[async_trait]
 impl DIBuilder for Foo {
-    type Input = (DIObj<Box<dyn Printer>>, ());
+    type Input = deps!(Box<dyn Printer>, Box<dyn Writer>);
     type Output = Self;
-
-    async fn build((printer, _): Self::Input) -> Self::Output {
-        Self::new(printer.lock().unwrap().clone())
+    async fn build(input: Self::Input) -> Self::Output {
+        let_deps!(printer, writer <- input);
+        Self::new(printer, writer)
     }
 }
 
 #[tokio::main]
 async fn main() {
     let mut manager = DIManager::default();
-
     manager.build::<Bar>().await;
-    let foo = manager
-        .build::<Foo>()
-        .await
-        .unwrap()
-        .lock()
-        .unwrap()
-        .clone();
-
-    assert_eq!(foo.print(), "foo bar");
+    manager.build::<Baz>().await;
+    
+    let foo = manager.build::<Foo>().await.unwrap().extract();
+    
+    assert_eq!(foo.print(), "foo bar baz");
 }
 ```
 
