@@ -21,7 +21,7 @@ default = []
 [dependencies]
 proc-macro2 = { workspace = true, features = ["proc-macro"] }
 quote = { workspace = true, features = ["proc-macro"] }
-syn = { workspace = true, features = ["clone-impls", "derive", "parsing", "printing", "proc-macro"] }
+syn = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
 yadir = { version = "0.2.0", path = "../yadir" }
