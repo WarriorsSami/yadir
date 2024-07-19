@@ -1,0 +1,12 @@
+[package]
+name = "tests"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sami Barbut-Dica"]
+publish = false
+
+[dependencies]
+claim = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+yadir = { path = "../yadir", features = ["derive"] }

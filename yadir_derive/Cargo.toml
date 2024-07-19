@@ -1,0 +1,27 @@
+[package]
+name = "yadir_derive"
+version = "0.1.0"
+edition = "2021"
+authors = ["Sami Barbut-Dica"]
+license-file = "../LICENSE"
+readme = "../README.md"
+homepage = "https://github.com/WarriorsSami/yadir"
+repository = "https://github.com/WarriorsSami/yadir"
+description = "Procedural macros for Yadir DI"
+keywords = ["yadir", "derive"]
+rust-version = "1.70.0"
+
+[lib]
+name = "yadir_derive"
+proc-macro = true
+
+[features]
+default = []
+
+[dependencies]
+proc-macro2 = { workspace = true, features = ["proc-macro"] }
+quote = { workspace = true, features = ["proc-macro"] }
+syn = { workspace = true, features = ["clone-impls", "derive", "parsing", "printing", "proc-macro"] }
+
+[dev-dependencies]
+yadir = { version = "0.2.0", path = "../yadir" }

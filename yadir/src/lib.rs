@@ -5,6 +5,12 @@
 pub mod core;
 pub mod macros;
 
+#[cfg(feature = "derive")]
+extern crate yadir_derive;
+
+#[cfg(feature = "derive")]
+pub use yadir_derive::DIBuilder;
+
 #[cfg(test)]
 mod tests {
     use crate::core::contracts::DIBuilder;

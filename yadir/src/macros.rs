@@ -19,8 +19,8 @@ macro_rules! deps {
     ($t:ty) => {
         (DIObj<$t>, ())
     };
-    ($t:ty, $($rest:ty),*) => {
-        (DIObj<$t>, deps!($($rest),*))
+    ($t:ty, $( $rest:ty )*) => {
+        (DIObj<$t>, deps!($( $rest )*))
     };
 }
 
