@@ -206,11 +206,11 @@ impl DIManager {
     /// # Examples
     ///
     /// ```
-    /// # use async_trait::async_trait;
-    /// # use yadir::{deps, let_deps};
-    /// # use yadir::core::contracts::{DIBuilder};
-    /// # use yadir::core::primitives::{DIManager, DIObj};
-    /// # use yadir_derive::DIBuilder;
+    /// use async_trait::async_trait;
+    /// use yadir::{deps, let_deps};
+    /// use yadir::core::contracts::{DIBuilder};
+    /// use yadir::core::primitives::{DIManager, DIObj};
+    /// use yadir_derive::DIBuilder;
     ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Bar;
@@ -248,17 +248,17 @@ impl DIManager {
     /// # Examples
     ///
     /// ```
-    /// # use async_trait::async_trait;
-    /// # use yadir::{deps, let_deps};
-    /// # use yadir::core::contracts::{DIBuilder};
-    /// # use yadir::core::primitives::{DIManager, DIObj};
-    /// # use yadir_derive::DIBuilder;
+    /// use async_trait::async_trait;
+    /// use yadir::{deps, let_deps};
+    /// use yadir::core::contracts::{DIBuilder};
+    /// use yadir::core::primitives::{DIManager, DIObj};
+    /// use yadir_derive::DIBuilder;
     ///
-    /// # #[derive(Clone, DIBuilder)]
-    /// # struct Bar;
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Bar;
     ///
-    /// # #[derive(Clone, DIBuilder)]
-    /// # struct Foo(#[deps] Bar);
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
     ///
     /// #[tokio::main]
     /// async fn main() {
@@ -294,25 +294,25 @@ impl DIManager {
     /// # Examples
     ///
     /// ```
-    /// # use async_trait::async_trait;
-    /// # use yadir::{deps, let_deps};
-    /// # use yadir::core::contracts::{DIBuilder};
-    /// # use yadir::core::primitives::{DIObj};
+    /// use async_trait::async_trait;
+    /// use yadir::{deps, let_deps};
+    /// use yadir::core::contracts::{DIBuilder};
+    /// use yadir::core::primitives::{DIObj};
     /// use yadir::core::primitives::DIManager;
-    /// # use yadir_derive::DIBuilder;
+    /// use yadir_derive::DIBuilder;
     ///
-    /// # #[derive(Clone, DIBuilder)]
-    /// # struct Bar;
-    /// #
-    /// # #[derive(Clone, DIBuilder)]
-    /// # struct Foo(#[deps] Bar);
-    /// #
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Bar;
+    ///
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
+    /// 
     /// #[tokio::main]
     /// async fn main() {
     ///     let mut manager = DIManager::default();
     ///
     ///     manager.build::<Bar>().await;
-    /// #   manager.build::<Foo>().await;
+    ///     manager.build::<Foo>().await;
     ///
     ///     assert!(manager.has::<DIObj<Bar>>());
     /// }
