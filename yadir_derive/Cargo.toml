@@ -24,4 +24,4 @@ quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "derive", "parsing", "printing", "proc-macro", "full"] }
 
 [dev-dependencies]
-yadir = { version = "0.2.2", path = "../yadir" }
+yadir = { version = "0.2.1", path = "../yadir" }
