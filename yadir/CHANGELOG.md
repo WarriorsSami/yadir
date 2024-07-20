@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.2...yadir-v0.2.3) - 2024-07-20
+
+### Fixed
+- *(yadir)* correct deps! and let_deps! macros matching rules to accept more than 3 "csv"
+
 ## [0.2.2](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.1...yadir-v0.2.2) - 2024-07-20
 
 ### Added
