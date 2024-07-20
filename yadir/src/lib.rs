@@ -18,6 +18,7 @@ mod tests {
     use crate::{deps, let_deps};
     use async_trait::async_trait;
     use dyn_clone::{clone_trait_object, DynClone};
+    use yadir_derive::DIBuilder;
 
     clone_trait_object!(Printer);
     clone_trait_object!(Writer);
@@ -30,7 +31,8 @@ mod tests {
         fn write(&self) -> String;
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, DIBuilder)]
+    #[build_as(Box<dyn Printer>)]
     struct Bar;
 
     impl Printer for Bar {
@@ -39,7 +41,8 @@ mod tests {
         }
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, DIBuilder)]
+    #[build_as(Box<dyn Writer>)]
     struct Baz;
 
     impl Writer for Baz {
@@ -48,9 +51,12 @@ mod tests {
         }
     }
 
-    #[derive(Clone)]
+    #[derive(Clone, DIBuilder)]
+    #[build_method("new")]
     struct Foo {
+        #[deps]
         printer: Box<dyn Printer>,
+        #[deps]
         writer: Box<dyn Writer>,
     }
 
@@ -61,38 +67,6 @@ mod tests {
 
         fn print(&self) -> String {
             format!("foo {} {}", self.printer.print(), self.writer.write())
-        }
-    }
-
-    #[async_trait]
-    impl DIBuilder for Bar {
-        type Input = deps!();
-        type Output = Box<dyn Printer>;
-
-        async fn build(_: Self::Input) -> Self::Output {
-            Box::new(Self)
-        }
-    }
-
-    #[async_trait]
-    impl DIBuilder for Baz {
-        type Input = deps!();
-        type Output = Box<dyn Writer>;
-
-        async fn build(_: Self::Input) -> Self::Output {
-            Box::new(Self)
-        }
-    }
-
-    #[async_trait]
-    impl DIBuilder for Foo {
-        type Input = deps!(Box<dyn Printer>, Box<dyn Writer>);
-        type Output = Self;
-
-        async fn build(input: Self::Input) -> Self::Output {
-            let_deps!(printer, writer <- input);
-
-            Self::new(printer, writer)
         }
     }
 

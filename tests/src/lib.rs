@@ -49,7 +49,7 @@ mod tests {
 
         assert_some!(foo);
     }
-    
+
     #[tokio::test]
     async fn test_di_builder_proc_macro_for_all_named_fields_as_deps_with_new_build_method() {
         #[derive(Clone, DIBuilder)]
@@ -66,7 +66,7 @@ mod tests {
             #[deps]
             baz: Baz,
         }
-        
+
         impl Foo {
             fn new(bar: Bar, baz: Baz) -> Self {
                 Self { bar, baz }
@@ -80,7 +80,7 @@ mod tests {
 
         assert_some!(foo);
     }
-    
+
     #[tokio::test]
     async fn test_di_builder_proc_macro_for_all_unnamed_fields_as_deps_with_new_build_method() {
         #[derive(Clone, DIBuilder)]
@@ -92,7 +92,7 @@ mod tests {
         #[derive(Clone, DIBuilder)]
         #[build_method("new")]
         struct Foo(#[deps] Bar, #[deps] Baz);
-        
+
         impl Foo {
             fn new(bar: Bar, baz: Baz) -> Self {
                 Self(bar, baz)
@@ -106,7 +106,7 @@ mod tests {
 
         assert_some!(foo);
     }
-    
+
     #[tokio::test]
     async fn test_di_builder_proc_macro_for_all_named_fields_as_deps_with_default_build_method() {
         #[derive(Default, Clone, DIBuilder)]
@@ -131,7 +131,7 @@ mod tests {
 
         assert_some!(foo);
     }
-    
+
     #[tokio::test]
     async fn test_di_builder_proc_macro_for_all_unnamed_fields_as_deps_with_default_build_method() {
         #[derive(Default, Clone, DIBuilder)]

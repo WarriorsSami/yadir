@@ -13,7 +13,7 @@ categories = ["rust-patterns"]
 rust-version = "1.70.0"
 
 [features]
-derive = ["yadir_derive"]
+derive = ["dep:yadir_derive"]
 
 [dependencies]
 async-trait = { workspace = true }
