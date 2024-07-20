@@ -16,8 +16,58 @@ mod helper_primitives;
 /// - `#[build_method]`: Specifies the method to build the dependency, which can be one of the following:
 ///    - `new`: Calls the `new` method on the input struct.
 ///    - `default`: Calls the `Default` trait implementation for the input struct.
-///    - `None`: Directly instantiates the input struct.
+///    - `None` (the attribute is missing): Directly instantiates the input struct.
 /// - `#[deps]`: Specifies the fields that are input dependencies for the builder.
+/// 
+/// # Example
+/// 
+/// ```ignore
+/// 
+/// trait Printer: Sync + Send + DynClone {
+///    fn print(&self) -> String;
+/// }
+/// 
+/// #[derive(Clone, DIBuilder)]
+/// #[build_as(Box<dyn Printer>)]
+/// struct Bar;
+/// 
+/// impl Printer for Bar {
+///     fn print(&self) -> String {
+///         "bar".to_string()
+///     }
+/// }
+/// 
+/// #[derive(Default, Clone, DIBuilder)]
+/// #[build_method("default")]
+/// struct Baz;
+/// 
+/// #[derive(Clone, DIBuilder)]
+/// #[build_method("new")]
+/// struct Qux;
+/// 
+/// impl Qux {
+///    pub fn new() -> Self {
+///       Self
+///   }
+/// }
+/// 
+/// #[derive(Clone, DIBuilder)]
+/// #[build_method("new")]
+/// struct Foo {
+///    #[deps]
+///    bar: Box<dyn Printer>,
+///    #[deps]
+///    baz: Baz,
+///    #[deps]
+///    qux: Qux,
+/// }
+/// 
+/// impl Foo {
+///     pub fn new(bar: Box<dyn Printer>, baz: Baz, qux: Qux) -> Self {
+///        Self { bar, baz, qux }
+///     }
+/// }
+/// ```
 #[proc_macro_derive(DIBuilder, attributes(build_as, build_method, deps))]
 pub fn derive_di_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::ItemStruct);
