@@ -14,10 +14,12 @@ pub use yadir_derive::DIBuilder;
 #[cfg(test)]
 mod tests {
     use crate::core::contracts::DIBuilder;
-    use crate::core::primitives::{DIManager, DIObj};
+    use crate::core::primitives::{DIManager, DIObj, Lifetime};
     use crate::{deps, let_deps};
     use async_trait::async_trait;
+    use claim::assert_some;
     use dyn_clone::{clone_trait_object, DynClone};
+    use uuid::Uuid;
     use yadir_derive::DIBuilder;
 
     clone_trait_object!(Printer);
@@ -54,6 +56,7 @@ mod tests {
     #[derive(Clone, DIBuilder)]
     #[build_method("new")]
     struct Foo {
+        id: Uuid,
         #[deps]
         printer: Box<dyn Printer>,
         #[deps]
@@ -62,22 +65,84 @@ mod tests {
 
     impl Foo {
         fn new(printer: Box<dyn Printer>, writer: Box<dyn Writer>) -> Self {
-            Self { printer, writer }
+            let id = Uuid::new_v4();
+            Self { id, printer, writer }
         }
 
         fn print(&self) -> String {
             format!("foo {} {}", self.printer.print(), self.writer.write())
         }
+        
+        fn id(&self) -> Uuid {
+            self.id
+        }
     }
 
     #[tokio::test]
-    async fn test_di_manager() {
+    async fn test_di_manager_for_deps_transient_lifetimes() {
         let mut manager = DIManager::default();
 
-        manager.build::<Bar>().await;
-        manager.build::<Baz>().await;
-        let foo = manager.build::<Foo>().await.unwrap().extract();
+        manager
+            .register::<Bar>(Some(Lifetime::Transient))
+            .await
+            .register::<Baz>(Some(Lifetime::Transient))
+            .await
+            .register::<Foo>(Some(Lifetime::Transient))
+            .await;
 
-        assert_eq!(foo.print(), "foo bar baz");
+        let foo1 = manager.resolve::<Foo>().await;
+        assert_some!(foo1.clone());
+
+        let foo1 = foo1.unwrap().extract();
+        assert_eq!(foo1.print(), "foo bar baz");
+        
+        let foo2 = manager.resolve::<Foo>().await;
+        assert_some!(foo2.clone());
+        
+        let foo2 = foo2.unwrap().extract();
+        assert_eq!(foo2.print(), "foo bar baz");
+        
+        assert_ne!(foo1.id(), foo2.id());
+    }
+    
+    #[tokio::test]
+    async fn test_di_manager_for_deps_singleton_lifetimes() {
+        let mut manager = DIManager::default();
+
+        manager
+            .register::<Bar>(Some(Lifetime::Transient))
+            .await
+            .register::<Baz>(Some(Lifetime::Transient))
+            .await
+            .register::<Foo>(Some(Lifetime::Singleton))
+            .await;
+
+        let foo1 = manager.resolve::<Foo>().await;
+        assert_some!(foo1.clone());
+
+        let foo1 = foo1.unwrap().extract();
+        assert_eq!(foo1.print(), "foo bar baz");
+        
+        let foo2 = manager.resolve::<Foo>().await;
+        assert_some!(foo2.clone());
+        
+        let foo2 = foo2.unwrap().extract();
+        assert_eq!(foo2.print(), "foo bar baz");
+        
+        assert_eq!(foo1.id(), foo2.id());
+    }
+    
+    #[tokio::test]
+    async fn test_di_manager_for_not_resolving_unregistered_deps() {
+        let mut manager = DIManager::default();
+
+        manager
+            .register::<Baz>(Some(Lifetime::Transient))
+            .await
+            .register::<Bar>(Some(Lifetime::Transient))
+            .await;
+
+        let foo = manager.resolve::<Foo>().await;
+        assert!(foo.is_none());
     }
 }

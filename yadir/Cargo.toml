@@ -24,3 +24,4 @@ yadir_derive = { version = "0.1.2", optional = true, path = "../yadir_derive" }
 
 [dev-dependencies]
 yadir_derive = { version = "0.1.2", path = "../yadir_derive" }
+uuid = { version = "1.10.0", features = ["v4"] }

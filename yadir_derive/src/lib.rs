@@ -1,5 +1,5 @@
 //! # yadir_derive
-//! 
+//!
 //! This crate provides helpful procedural macros for the `yadir` crate.
 
 use crate::helper_primitives::{BuildMethod, StructField, TypeOutput};
@@ -7,50 +7,50 @@ use crate::helper_primitives::{BuildMethod, StructField, TypeOutput};
 mod helper_primitives;
 
 /// Derive the `DIBuilder` trait for a struct.
-/// 
-/// This proc macro is used to automatically derive the `DIBuilder` trait for a struct. 
+///
+/// This proc macro is used to automatically derive the `DIBuilder` trait for a struct.
 /// The `DIBuilder` trait is used to build a dependency by specifying the input/dependencies, the output, and the build method for a given dependency.
-/// 
+///
 /// The `#[derive(DIBuilder)]` macro provides a few helper attributes to customize the behavior of the builder:
-/// - `#[build_as]`: Specifies the output type of the builder. If this attribute is not present, the output type will be the input struct itself. 
+/// - `#[build_as]`: Specifies the output type of the builder. If this attribute is not present, the output type will be the input struct itself.
 /// - `#[build_method]`: Specifies the method to build the dependency, which can be one of the following:
 ///    - `new`: Calls the `new` method on the input struct.
 ///    - `default`: Calls the `Default` trait implementation for the input struct.
 ///    - `None` (the attribute is missing): Directly instantiates the input struct.
 /// - `#[deps]`: Specifies the fields that are input dependencies for the builder.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```ignore
-/// 
+///
 /// trait Printer: Sync + Send + DynClone {
 ///    fn print(&self) -> String;
 /// }
-/// 
+///
 /// #[derive(Clone, DIBuilder)]
 /// #[build_as(Box<dyn Printer>)]
 /// struct Bar;
-/// 
+///
 /// impl Printer for Bar {
 ///     fn print(&self) -> String {
 ///         "bar".to_string()
 ///     }
 /// }
-/// 
+///
 /// #[derive(Default, Clone, DIBuilder)]
 /// #[build_method("default")]
 /// struct Baz;
-/// 
+///
 /// #[derive(Clone, DIBuilder)]
 /// #[build_method("new")]
 /// struct Qux;
-/// 
+///
 /// impl Qux {
 ///    pub fn new() -> Self {
 ///       Self
 ///   }
 /// }
-/// 
+///
 /// #[derive(Clone, DIBuilder)]
 /// #[build_method("new")]
 /// struct Foo {
@@ -61,7 +61,7 @@ mod helper_primitives;
 ///    #[deps]
 ///    qux: Qux,
 /// }
-/// 
+///
 /// impl Foo {
 ///     pub fn new(bar: Box<dyn Printer>, baz: Baz, qux: Qux) -> Self {
 ///        Self { bar, baz, qux }
@@ -77,7 +77,11 @@ pub fn derive_di_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStr
         .attrs
         .iter()
         .find(|attr| attr.path().is_ident("build_as"))
-        .map(|attr| TypeOutput::BoxedTraitObjectType(attr.parse_args::<syn::Type>().expect("expected a type")))
+        .map(|attr| {
+            TypeOutput::BoxedTraitObjectType(
+                attr.parse_args::<syn::Type>().expect("expected a type"),
+            )
+        })
         .unwrap_or_else(|| TypeOutput::SelfType);
 
     // get the value of the #[build_method] attribute
@@ -222,7 +226,7 @@ pub fn derive_di_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStr
         }
         _ => panic!("Cannot mix named and unnamed fields with #[di_build]"),
     };
-    
+
     // box the build method output if the #[build_as] attribute is present
     let build_method = match build_as_output {
         TypeOutput::SelfType => build_method,

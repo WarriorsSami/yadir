@@ -26,13 +26,13 @@ pub trait DIBuilder {
     /// use yadir::core::contracts::{DIBuilder, GetInput};
     /// use yadir::core::primitives::{DIManager, DIObj};
     /// use yadir_derive::DIBuilder;
-    /// 
+    ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Bar;
-    /// 
+    ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Foo(#[deps] Bar);
-    /// 
+    ///
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let mut manager = DIManager::default();
@@ -65,13 +65,13 @@ pub trait DIBuilder {
     /// use yadir::core::contracts::{DIBuilder, GetInput};
     /// use yadir::core::primitives::{DIManager, DIObj};
     /// use yadir_derive::DIBuilder;
-    /// 
+    ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Bar;
-    /// 
+    ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Foo(#[deps] Bar);
-    /// 
+    ///
     /// #[tokio::main]
     /// async fn main() {
     ///    let mut manager = DIManager::default();

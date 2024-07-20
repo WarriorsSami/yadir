@@ -3,9 +3,21 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+/// A simple enum to represent the lifetime of a dependency.
+///
+/// The `Lifetime` enum is used to represent the lifetime of a dependency. The enum has two variants:
+/// - `Transient`: Represents a dependency that is created each time it is requested.
+/// - `Singleton`: Represents a dependency that is created once and shared across all requests.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Lifetime {
+    #[default]
+    Transient,
+    Singleton,
+}
+
 /// A simple type map that stores values by their type.
 #[derive(Default)]
-pub struct TypeMap(HashMap<TypeId, Box<dyn Any>>);
+pub struct TypeMap(HashMap<TypeId, (Lifetime, Box<dyn Any>)>);
 
 impl TypeMap {
     /// Inserts a value into the map with its inferred type as the key.
@@ -16,15 +28,18 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42);
+    /// map.set(42, None);
     ///
     /// assert_eq!(map.get::<i32>(), Some(&42));
     /// ```
-    pub fn set<T>(&mut self, t: T)
+    pub fn set<T>(&mut self, t: T, lifetime: Option<Lifetime>)
     where
         T: Any + 'static,
     {
-        self.0.insert(TypeId::of::<T>(), Box::new(t));
+        self.0.insert(
+            TypeId::of::<T>(),
+            (lifetime.unwrap_or_default(), Box::new(t)),
+        );
     }
 
     /// Retrieves a value from the map by its type. Returns `None` if the value is not found.
@@ -44,7 +59,7 @@ impl TypeMap {
     {
         self.0
             .get(&TypeId::of::<T>())
-            .map(|boxed| boxed.downcast_ref::<T>().unwrap())
+            .map(|(_, boxed)| boxed.downcast_ref::<T>().unwrap())
     }
 
     /// Retrieves a mutable reference to a value from the map by its type. Returns `None` if the value is not found.
@@ -55,7 +70,7 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42);
+    /// map.set(42, None);
     ///
     /// assert_eq!(map.get_mut::<i32>(), Some(&mut 42));
     ///
@@ -70,7 +85,30 @@ impl TypeMap {
     {
         self.0
             .get_mut(&TypeId::of::<T>())
-            .map(|boxed| boxed.downcast_mut::<T>().unwrap())
+            .map(|(_, boxed)| boxed.downcast_mut::<T>().unwrap())
+    }
+
+    /// Retrieves the lifetime of a value from the map by its type. Returns `None` if the value is not found.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use yadir::core::primitives::{Lifetime, TypeMap};
+    ///
+    /// let mut map = TypeMap::default();
+    ///
+    /// assert_eq!(map.get_lifetime::<i32>(), None);
+    ///
+    /// map.set(42, Some(Lifetime::Singleton));
+    /// assert_eq!(map.get_lifetime::<i32>(), Some(Lifetime::Singleton));
+    /// ```
+    pub fn get_lifetime<T>(&self) -> Option<Lifetime>
+    where
+        T: Any + 'static,
+    {
+        self.0
+            .get(&TypeId::of::<T>())
+            .map(|(lifetime, _)| *lifetime)
     }
 
     /// Checks if the map contains a value of a given type.
@@ -81,7 +119,7 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42);
+    /// map.set(42, None);
     ///
     /// assert!(map.has::<i32>());
     /// assert!(!map.has::<String>());
@@ -157,8 +195,96 @@ impl DIManager {
         let input = T::Input::get_input(self)?;
         let obj = T::build(input).await;
         let sync_obj = DIObj::new(obj);
-        self.0.set::<DIObj<T::Output>>(sync_obj.clone());
+        self.0
+            .set::<DIObj<T::Output>>(sync_obj.clone(), Some(Lifetime::Transient));
+
         Some(sync_obj)
+    }
+
+    /// Registers a dependency using the dependency injection manager with an optional lifetime and returns a mutable reference to the manager allowing for further chaining.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use async_trait::async_trait;
+    /// # use yadir::{deps, let_deps};
+    /// # use yadir::core::contracts::{DIBuilder};
+    /// # use yadir::core::primitives::{DIManager, DIObj};
+    /// # use yadir_derive::DIBuilder;
+    ///
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Bar;
+    ///
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut manager = DIManager::default();
+    ///
+    ///     manager
+    ///         .register::<Bar>(None).await
+    ///         .register::<Foo>(None).await;
+    ///
+    ///     assert!(manager.has::<DIObj<Bar>>());
+    ///     assert!(manager.has::<DIObj<Foo>>());
+    /// }
+    /// ```
+    pub async fn register<T>(&mut self, lifetime: Option<Lifetime>) -> &mut Self
+    where
+        T: DIBuilder,
+    {
+        let input = T::Input::get_input(self)
+            .expect("Some input dependencies are missing. Please register them beforehand.");
+        let obj = T::build(input).await;
+        let sync_obj = DIObj::new(obj);
+        self.0.set::<DIObj<T::Output>>(sync_obj.clone(), lifetime);
+
+        self
+    }
+
+    /// Resolves a dependency using the dependency injection manager.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use async_trait::async_trait;
+    /// # use yadir::{deps, let_deps};
+    /// # use yadir::core::contracts::{DIBuilder};
+    /// # use yadir::core::primitives::{DIManager, DIObj};
+    /// # use yadir_derive::DIBuilder;
+    ///
+    /// # #[derive(Clone, DIBuilder)]
+    /// # struct Bar;
+    ///
+    /// # #[derive(Clone, DIBuilder)]
+    /// # struct Foo(#[deps] Bar);
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut manager = DIManager::default();
+    ///
+    ///     manager.build::<Bar>().await;
+    ///     manager.build::<Foo>().await;    
+    ///
+    ///     let foo = manager.resolve::<Foo>().await;
+    ///
+    ///     assert!(foo.is_some());
+    /// }
+    /// ```
+    pub async fn resolve<T>(&mut self) -> Option<DIObj<T::Output>>
+    where
+        T: DIBuilder,
+    {
+        match self.0.get_lifetime::<DIObj<T::Output>>() {
+            Some(Lifetime::Transient) => self.build::<T>().await,
+            Some(Lifetime::Singleton) => {
+                let obj = self.0.get::<DIObj<T::Output>>().unwrap().extract();
+                let sync_obj = DIObj::new(obj);
+                Some(sync_obj)
+            }
+            None => None,
+        }
     }
 
     /// Checks if the dependency injection manager contains a dependency of a given type.
