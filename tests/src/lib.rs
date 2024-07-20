@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(dead_code)]
+    
     use async_trait::async_trait;
     use claim::assert_some;
     use yadir::core::contracts::DIBuilder;

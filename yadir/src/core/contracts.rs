@@ -25,34 +25,14 @@ pub trait DIBuilder {
     /// use yadir::{deps, let_deps};
     /// use yadir::core::contracts::{DIBuilder, GetInput};
     /// use yadir::core::primitives::{DIManager, DIObj};
-    ///
-    /// #[derive(Clone)]
+    /// use yadir_derive::DIBuilder;
+    /// 
+    /// #[derive(Clone, DIBuilder)]
     /// struct Bar;
-    ///
-    /// #[derive(Clone)]
-    /// struct Foo(Bar);
-    ///
-    /// #[async_trait]
-    /// impl DIBuilder for Bar {
-    ///    type Input = deps!();
-    ///    type Output = Self;
-    ///
-    ///     async fn build(_: Self::Input) -> Self::Output {
-    ///         Self
-    ///     }
-    /// }
-    ///
-    /// #[async_trait]
-    /// impl DIBuilder for Foo {
-    ///     type Input = deps!(Bar);
-    ///     type Output = Self;
-    ///
-    ///     async fn build(input: Self::Input) -> Self::Output {
-    ///         let_deps!(bar <- input);
-    ///         Self(bar)
-    ///     }
-    /// }
-    ///
+    /// 
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
+    /// 
     /// # #[tokio::main]
     /// # async fn main() {
     /// #    let mut manager = DIManager::default();
@@ -84,43 +64,23 @@ pub trait DIBuilder {
     /// use yadir::{deps, let_deps};
     /// use yadir::core::contracts::{DIBuilder, GetInput};
     /// use yadir::core::primitives::{DIManager, DIObj};
-    ///
-    /// #[derive(Clone)]
+    /// use yadir_derive::DIBuilder;
+    /// 
+    /// #[derive(Clone, DIBuilder)]
     /// struct Bar;
+    /// 
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
+    /// 
+    /// #[tokio::main]
+    /// async fn main() {
+    ///    let mut manager = DIManager::default();
     ///
-    /// #[derive(Clone)]
-    /// struct Foo(Bar);
+    ///    manager.build::<Bar>().await;
+    ///    manager.build::<Foo>().await;
     ///
-    /// #[async_trait]
-    /// impl DIBuilder for Bar {
-    ///    type Input = deps!();
-    ///    type Output = Self;
-    ///
-    ///     async fn build(_: Self::Input) -> Self::Output {
-    ///         Self
-    ///     }
+    ///    assert!(manager.has::<DIObj<Bar>>());
     /// }
-    ///
-    /// #[async_trait]
-    /// impl DIBuilder for Foo {
-    ///     type Input = deps!(Bar);
-    ///     type Output = Self;
-    ///
-    ///     async fn build(input: Self::Input) -> Self::Output {
-    ///         let_deps!(bar <- input);
-    ///         Self(bar)
-    ///     }
-    /// }
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() {
-    /// #    let mut manager = DIManager::default();
-    /// #
-    /// #    manager.build::<Bar>().await;
-    /// #    manager.build::<Foo>().await;
-    /// #
-    /// #    assert!(manager.has::<DIObj<Bar>>());
-    /// # }
     /// ```
     async fn build(input: Self::Input) -> Self::Output;
 }

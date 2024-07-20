@@ -129,36 +129,16 @@ impl DIManager {
     /// ```
     /// # use async_trait::async_trait;
     /// # use yadir::{deps, let_deps};
-    /// # use yadir::core::contracts::{DIBuilder, GetInput};
+    /// # use yadir::core::contracts::{DIBuilder};
     /// # use yadir::core::primitives::DIObj;
     /// use yadir::core::primitives::DIManager;
+    /// # use yadir_derive::DIBuilder;
     ///
-    /// # #[derive(Clone)]
+    /// # #[derive(Clone, DIBuilder)]
     /// # struct Bar;
     /// #
-    /// # #[derive(Clone)]
-    /// # struct Foo(Bar);
-    /// #
-    /// # #[async_trait]
-    /// # impl DIBuilder for Bar {
-    /// #    type Input = deps!();
-    /// #    type Output = Self;
-    /// #
-    /// #     async fn build(_: Self::Input) -> Self::Output {
-    /// #         Self
-    /// #     }
-    /// # }
-    /// #
-    /// # #[async_trait]
-    /// # impl DIBuilder for Foo {
-    /// #     type Input = deps!(Bar);
-    /// #     type Output = Self;
-    /// #
-    /// #     async fn build(input: Self::Input) -> Self::Output {
-    /// #        let_deps!(bar <- input);
-    /// #        Self(bar)
-    /// #     }
-    /// # }
+    /// # #[derive(Clone, DIBuilder)]
+    /// # struct Foo(#[deps] Bar);
     /// #
     /// #[tokio::main]
     /// async fn main() {
@@ -188,37 +168,18 @@ impl DIManager {
     /// # Examples
     ///
     /// ```
-    /// use async_trait::async_trait;
-    /// use yadir::{deps, let_deps};
-    /// use yadir::core::contracts::{DIBuilder, GetInput};
-    /// use yadir::core::primitives::{DIManager, DIObj};
+    /// # use async_trait::async_trait;
+    /// # use yadir::{deps, let_deps};
+    /// # use yadir::core::contracts::{DIBuilder};
+    /// # use yadir::core::primitives::{DIObj};
+    /// use yadir::core::primitives::DIManager;
+    /// # use yadir_derive::DIBuilder;
     ///
-    /// #[derive(Clone)]
-    /// struct Bar;
-    ///
-    /// # #[derive(Clone)]
-    /// # struct Foo(Bar);
+    /// # #[derive(Clone, DIBuilder)]
+    /// # struct Bar;
     /// #
-    /// #[async_trait]
-    /// impl DIBuilder for Bar {
-    ///     type Input = deps!();
-    ///     type Output = Self;
-    ///
-    ///      async fn build(_: Self::Input) -> Self::Output {
-    ///          Self
-    ///      }
-    /// }
-    ///  
-    /// # #[async_trait]
-    /// # impl DIBuilder for Foo {
-    /// #     type Input = deps!(Bar);
-    /// #     type Output = Self;
-    /// #
-    /// #     async fn build(input: Self::Input) -> Self::Output {
-    /// #         let_deps!(bar <- input);
-    /// #         Self(bar)
-    /// #     }
-    /// # }
+    /// # #[derive(Clone, DIBuilder)]
+    /// # struct Foo(#[deps] Bar);
     /// #
     /// #[tokio::main]
     /// async fn main() {
