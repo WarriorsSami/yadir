@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- [ ] Keyed dependencies
+- [ ] Async dependencies
+- [ ] Factory dependencies
+- [ ] DSL for registering dependencies
 
 ## [0.3.0](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.3...yadir-v0.3.0) - 2024-07-20
 
@@ -16,10 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - *(yadir)* add unreleased features to CHANGELOG.md
 - [x] Enhanced DI Manager API for registering and resolving dependencies
 - [x] Lifetime specifiers for dependencies, mainly singleton and transient ones
-- [ ] Keyed dependencies
-- [ ] Async dependencies
-- [ ] Factory dependencies
-- [ ] DSL for registering dependencies
 
 ## [0.2.3](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.2...yadir-v0.2.3) - 2024-07-20
 
