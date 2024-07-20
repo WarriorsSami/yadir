@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.2.4](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.3...yadir-v0.2.4) - 2024-07-20
+
+### Other
+- *(yadir)* update rustdocs to correspond to latest version of yadir_derive
+- *(yadir)* add unreleased features to CHANGELOG.md
 - [ ] Enhanced DI Manager API for registering and resolving dependencies
 - [ ] Lifetime specifiers for dependencies, mainly singleton and transient ones
 - [ ] Keyed dependencies
