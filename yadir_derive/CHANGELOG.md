@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.2...yadir_derive-v0.1.3) - 2024-07-20
+
+### Added
+- *(yadir)* add lifetime specifiers (singleton, transient) and improve registering/resolving deps api for di manager
+
+### Fixed
+- *(yadir_derive)* remove redundant dev dependency upon yadir
+
 ## [0.1.2](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.1...yadir_derive-v0.1.2) - 2024-07-20
 
 ### Other
