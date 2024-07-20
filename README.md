@@ -18,7 +18,7 @@ Its initial implementation is based on the [Registry design pattern](https://wil
 Add Yadir to your `Cargo.toml` file:
 ```toml
 [dependencies]
-yadir = { version = "0.2.2", features = ["derive"] }
+yadir = { version = "0.2.3", features = ["derive"] }
 ```
 
 Create a new registry and register your dependencies, after implementing the `DIBuilder` trait for each one of them:
