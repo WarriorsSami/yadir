@@ -19,8 +19,8 @@ macro_rules! deps {
     ($t:ty) => {
         (DIObj<$t>, ())
     };
-    ($t:ty, $( $rest:ty )*) => {
-        (DIObj<$t>, deps!($( $rest )*))
+    ($t:ty, $( $rest:ty ),*) => {
+        (DIObj<$t>, deps!($( $rest ),*))
     };
 }
 
@@ -45,9 +45,9 @@ macro_rules! let_deps {
     ($name:ident <- $input:ident) => {
         let $name = $input.0.extract();
     };
-    ($name:ident, $( $rest:ident )* <- $input:ident) => {
+    ($name:ident, $( $rest:ident ),* <- $input:ident) => {
         let $name = $input.0.extract();
         let $input = $input.1;
-        let_deps!($( $rest )* <- $input);
+        let_deps!($( $rest ),* <- $input);
     };
 }
