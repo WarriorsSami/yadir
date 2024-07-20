@@ -1,6 +1,6 @@
 [package]
 name = "yadir_derive"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Sami Barbut-Dica"]
 license-file = "../LICENSE"
@@ -24,4 +24,4 @@ quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "derive", "parsing", "printing", "proc-macro", "full"] }
 
 [dev-dependencies]
-yadir = { version = "0.2.1", path = "../yadir" }
+yadir = { version = "0.2.3", path = "../yadir" }
