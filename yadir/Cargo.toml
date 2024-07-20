@@ -1,6 +1,6 @@
 [package]
 name = "yadir"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Sami Barbut-Dica"]
 license-file = "../LICENSE"
@@ -20,7 +20,7 @@ async-trait = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 claim = { workspace = true }
 dyn-clone = "1.0.17"
-yadir_derive = { version = "0.1.0", optional = true, path = "../yadir_derive" }
+yadir_derive = { version = "0.1.1", optional = true, path = "../yadir_derive" }
 
 [dev-dependencies]
-yadir_derive = { version = "0.1.0", path = "../yadir_derive" }
+yadir_derive = { version = "0.1.1", path = "../yadir_derive" }
