@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.3...yadir_derive-v0.1.4) - 2024-07-21
+
+### Other
+- *(yadir_derive)* remove redundant proc-macro-error deps
+- *(yadir_derive)* report syn::Error instead of panicking
+- *(yadir)* show complete examples for rustdocs in di manager and update yadir version in README.md
+
 ## [0.1.3](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.2...yadir_derive-v0.1.3) - 2024-07-20
 
 ### Added
