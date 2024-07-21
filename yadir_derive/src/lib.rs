@@ -19,7 +19,7 @@ mod helper_primitives;
 ///    - `default`: Calls the `Default` trait implementation for the input struct.
 ///    - `None` (the attribute is missing): Directly instantiates the input struct.
 /// - `#[deps]`: Specifies the fields that are input dependencies for the builder.
-/// 
+///
 /// Rules for attributes usage:
 /// - `#[build_as]` is optional on the struct
 /// - `#[build_method]` is optional on the struct

@@ -167,14 +167,16 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
                 ),*
             )
         },
-        (BuildMethod::Default, false, true) | (BuildMethod::Default, true, false) => {
+        (BuildMethod::Default, false, true)
+        | (BuildMethod::Default, true, false)
+        | (BuildMethod::Default, true, true) => {
             quote::quote! {
                 Self::default()
             }
         }
         _ => Err(syn::Error::new_spanned(
             input.clone(),
-            "Cannot mix named and unnamed fields with #[di_build]",
+            "Cannot mix named and unnamed fields with #[deps]",
         ))?,
     };
 
@@ -217,7 +219,7 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
         },
         _ => Err(syn::Error::new_spanned(
             input,
-            "Cannot mix named and unnamed fields with #[di_build]",
+            "Cannot mix named and unnamed fields with #[deps]",
         ))?,
     };
 
