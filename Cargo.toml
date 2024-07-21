@@ -12,6 +12,7 @@ resolver = "2"
 syn = { version = "2.0.71", default-features = false }
 quote = { version = "1.0.36", default-features = false }
 proc-macro2 = { version = "1.0.86", default-features = false }
+proc-macro-error = { version = "1.0.4", default-features = false }
 claim = { version = "0.5.0" }
 async-trait = { version = "0.1.51" }
 tokio = { version = "1.38.1", default-features = false }

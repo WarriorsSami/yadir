@@ -306,7 +306,7 @@ impl DIManager {
     ///
     /// #[derive(Clone, DIBuilder)]
     /// struct Foo(#[deps] Bar);
-    /// 
+    ///
     /// #[tokio::main]
     /// async fn main() {
     ///     let mut manager = DIManager::default();

@@ -7,13 +7,13 @@ pub(crate) enum BuildMethod {
 }
 
 impl TryFrom<String> for BuildMethod {
-    type Error = Box<dyn std::error::Error>;
+    type Error = syn::Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match value.as_str() {
             "new" => Ok(Self::New),
             "default" => Ok(Self::Default),
-            _ => Err("Invalid build method".into()),
+            _ => Err(syn::Error::new_spanned(value, "Invalid build method")),
         }
     }
 }
@@ -27,11 +27,22 @@ impl<'f> StructField<'f> {
         Self { field }
     }
 
-    pub(crate) fn is_deps(&self) -> bool {
-        self.field
+    pub(crate) fn is_deps(&self) -> syn::Result<bool> {
+        let deps_attrs = self
+            .field
             .attrs
             .iter()
-            .any(|attr| attr.path().is_ident("deps"))
+            .filter(|attr| attr.path().is_ident("deps"))
+            .collect::<Vec<_>>();
+
+        match deps_attrs.len() {
+            0 => Ok(false),
+            1 => Ok(true),
+            _ => Err(syn::Error::new_spanned(
+                deps_attrs[1].path(),
+                "Multiple #[deps] attributes are redundant",
+            )),
+        }
     }
 }
 

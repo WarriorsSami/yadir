@@ -66,13 +66,17 @@ mod tests {
     impl Foo {
         fn new(printer: Box<dyn Printer>, writer: Box<dyn Writer>) -> Self {
             let id = Uuid::new_v4();
-            Self { id, printer, writer }
+            Self {
+                id,
+                printer,
+                writer,
+            }
         }
 
         fn print(&self) -> String {
             format!("foo {} {}", self.printer.print(), self.writer.write())
         }
-        
+
         fn id(&self) -> Uuid {
             self.id
         }
@@ -95,16 +99,16 @@ mod tests {
 
         let foo1 = foo1.unwrap().extract();
         assert_eq!(foo1.print(), "foo bar baz");
-        
+
         let foo2 = manager.resolve::<Foo>().await;
         assert_some!(foo2.clone());
-        
+
         let foo2 = foo2.unwrap().extract();
         assert_eq!(foo2.print(), "foo bar baz");
-        
+
         assert_ne!(foo1.id(), foo2.id());
     }
-    
+
     #[tokio::test]
     async fn test_di_manager_for_deps_singleton_lifetimes() {
         let mut manager = DIManager::default();
@@ -122,16 +126,16 @@ mod tests {
 
         let foo1 = foo1.unwrap().extract();
         assert_eq!(foo1.print(), "foo bar baz");
-        
+
         let foo2 = manager.resolve::<Foo>().await;
         assert_some!(foo2.clone());
-        
+
         let foo2 = foo2.unwrap().extract();
         assert_eq!(foo2.print(), "foo bar baz");
-        
+
         assert_eq!(foo1.id(), foo2.id());
     }
-    
+
     #[tokio::test]
     async fn test_di_manager_for_not_resolving_unregistered_deps() {
         let mut manager = DIManager::default();

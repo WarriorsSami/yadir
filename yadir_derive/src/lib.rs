@@ -2,8 +2,10 @@
 //!
 //! This crate provides helpful procedural macros for the `yadir` crate.
 
-use crate::helper_primitives::{BuildMethod, StructField, TypeOutput};
+use crate::expand_handlers::expand_di_builder;
+use proc_macro_error::proc_macro_error;
 
+mod expand_handlers;
 mod helper_primitives;
 
 /// Derive the `DIBuilder` trait for a struct.
@@ -18,6 +20,14 @@ mod helper_primitives;
 ///    - `default`: Calls the `Default` trait implementation for the input struct.
 ///    - `None` (the attribute is missing): Directly instantiates the input struct.
 /// - `#[deps]`: Specifies the fields that are input dependencies for the builder.
+/// 
+/// Rules for attributes usage:
+/// - `#[build_as]` is optional on the struct
+/// - `#[build_method]` is optional on the struct
+/// - `#[deps]` is optional on the fields
+/// - `#[deps]` can only be used on fields and no more than once per field
+/// - `#[build_as]` can only be used once and always before `#[build_method]`
+/// - `#[build_method]` can only be used once and always after `#[build_as]`
 ///
 /// # Example
 ///
@@ -68,204 +78,11 @@ mod helper_primitives;
 ///     }
 /// }
 /// ```
+#[proc_macro_error]
 #[proc_macro_derive(DIBuilder, attributes(build_as, build_method, deps))]
 pub fn derive_di_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::ItemStruct);
-
-    // get the value of the #[build_as] attribute as a type
-    let build_as_output = input
-        .attrs
-        .iter()
-        .find(|attr| attr.path().is_ident("build_as"))
-        .map(|attr| {
-            TypeOutput::BoxedTraitObjectType(
-                attr.parse_args::<syn::Type>().expect("expected a type"),
-            )
-        })
-        .unwrap_or_else(|| TypeOutput::SelfType);
-
-    // get the value of the #[build_method] attribute
-    let build_method = input
-        .attrs
-        .iter()
-        .find(|attr| attr.path().is_ident("build_method"))
-        .map(|attr| {
-            attr.parse_args::<syn::LitStr>()
-                .expect("expected a string literal")
-                .value()
-        })
-        .map(BuildMethod::try_from)
-        .transpose()
-        .expect("failed to parse build method")
-        .unwrap_or(BuildMethod::None);
-
-    // get the types of all fields which are annotated with #[di_build]
-    let field_types = match &input.fields {
-        syn::Fields::Named(fields) => fields
-            .named
-            .iter()
-            .filter_map(|field| {
-                let ty = &field.ty;
-
-                if StructField::new(field).is_deps() {
-                    Some(quote::quote! {
-                        #ty
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>(),
-        syn::Fields::Unnamed(fields) => fields
-            .unnamed
-            .iter()
-            .enumerate()
-            .filter_map(|(_, field)| {
-                let ty = &field.ty;
-
-                if StructField::new(field).is_deps() {
-                    Some(quote::quote! {
-                        #ty
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>(),
-        syn::Fields::Unit => vec![],
-    };
-
-    let named_field_idents = match &input.fields {
-        syn::Fields::Named(fields) => fields
-            .named
-            .iter()
-            .filter_map(|field| {
-                let ident = field.ident.as_ref().unwrap();
-
-                if StructField::new(field).is_deps() {
-                    Some(ident)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>(),
-        _ => vec![],
-    };
-
-    let unnamed_field_idents = match &input.fields {
-        syn::Fields::Unnamed(fields) => fields
-            .unnamed
-            .iter()
-            .enumerate()
-            .filter_map(|(i, field)| {
-                let ident =
-                    syn::Ident::new(&format!("field_{}", i), proc_macro2::Span::call_site());
-
-                if StructField::new(field).is_deps() {
-                    Some(ident)
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>(),
-        _ => vec![],
-    };
-
-    // construct the instantiation of the input struct based on the #[deps] fields and the #[build_method] attribute
-    let build_method = match (
-        build_method,
-        named_field_idents.is_empty(),
-        unnamed_field_idents.is_empty(),
-    ) {
-        (BuildMethod::None, true, true) => quote::quote! {
-            Self
-        },
-        (BuildMethod::None, false, true) => quote::quote! {
-            let_deps!(#(#named_field_idents),* <- input);
-
-            Self {
-                #(
-                    #named_field_idents
-                ),*
-            }
-        },
-        (BuildMethod::None, true, false) => quote::quote! {
-            let_deps!(#(#unnamed_field_idents),* <- input);
-
-            Self(
-                #(
-                    #unnamed_field_idents
-                ),*
-            )
-        },
-        (BuildMethod::New, true, true) => quote::quote! {
-            Self::new()
-        },
-        (BuildMethod::New, false, true) => quote::quote! {
-            let_deps!(#(#named_field_idents),* <- input);
-
-            Self::new(
-                #(
-                    #named_field_idents
-                ),*
-            )
-        },
-        (BuildMethod::New, true, false) => quote::quote! {
-            let_deps!(#(#unnamed_field_idents),* <- input);
-
-            Self::new(
-                #(
-                    #unnamed_field_idents
-                ),*
-            )
-        },
-        (BuildMethod::Default, false, true) | (BuildMethod::Default, true, false) => {
-            quote::quote! {
-                Self::default()
-            }
-        }
-        _ => panic!("Cannot mix named and unnamed fields with #[di_build]"),
-    };
-
-    // box the build method output if the #[build_as] attribute is present
-    let build_method = match build_as_output {
-        TypeOutput::SelfType => build_method,
-        TypeOutput::BoxedTraitObjectType(_) => quote::quote! {
-            Box::new(#build_method)
-        },
-    };
-
-    // get the name of the input struct
-    let input = input.ident;
-
-    let output = match (
-        named_field_idents.is_empty(),
-        unnamed_field_idents.is_empty(),
-    ) {
-        (true, true) => quote::quote! {
-            #[async_trait]
-            impl DIBuilder for #input {
-                type Input = deps!();
-                type Output = #build_as_output;
-
-                async fn build(_: Self::Input) -> Self::Output {
-                    #build_method
-                }
-            }
-        },
-        (false, true) | (true, false) => quote::quote! {
-            #[async_trait]
-            impl DIBuilder for #input {
-                type Input = deps!(#(#field_types),*);
-                type Output = #build_as_output;
-
-                async fn build(input: Self::Input) -> Self::Output {
-                    #build_method
-                }
-            }
-        },
-        _ => panic!("Cannot mix named and unnamed fields with #[di_build]"),
-    };
-
-    output.into()
+    expand_di_builder(input)
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
