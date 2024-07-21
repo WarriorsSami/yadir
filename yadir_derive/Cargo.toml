@@ -22,4 +22,3 @@ default = []
 proc-macro2 = { workspace = true, features = ["proc-macro"] }
 quote = { workspace = true, features = ["proc-macro"] }
 syn = { workspace = true, features = ["clone-impls", "derive", "parsing", "printing", "proc-macro", "full"] }
-proc-macro-error = { workspace = true, features = ["syn-error"] }

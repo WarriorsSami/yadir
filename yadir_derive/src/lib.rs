@@ -3,7 +3,6 @@
 //! This crate provides helpful procedural macros for the `yadir` crate.
 
 use crate::expand_handlers::expand_di_builder;
-use proc_macro_error::proc_macro_error;
 
 mod expand_handlers;
 mod helper_primitives;
@@ -78,7 +77,6 @@ mod helper_primitives;
 ///     }
 /// }
 /// ```
-#[proc_macro_error]
 #[proc_macro_derive(DIBuilder, attributes(build_as, build_method, deps))]
 pub fn derive_di_builder(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::ItemStruct);
