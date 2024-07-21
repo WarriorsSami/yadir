@@ -43,14 +43,14 @@ pub trait DIBuilder {
     /// #    assert!(manager.has::<DIObj<Bar>>());
     /// # }
     /// ```
-    type Input: GetInput + Clone;
+    type Input: GetInput<Self::Output> + Clone;
 
     /// The output type representing the built dependency.
     ///
     /// The output type is the type of the dependency that will be built by the builder after resolving all its dependencies.
     /// Notice that the lifetime of the output type must be `'static` to ensure that the dependency injection manager does not
     /// allow for invalid references to types to be stored in the type map.
-    type Output: 'static + Clone;
+    type Output: Clone + GetInputKeys + 'static;
 
     /// Builds the dependency using the input type.
     ///
@@ -92,6 +92,10 @@ pub trait DIBuilder {
 /// - [`DIObj<T>`](super::primitives::DIObj): to retrieve a dependency wrapped in a thread-safe reference counted mutex from the dependency injection manager (**base case**).
 /// - `()`: to return the unit type when no dependencies are needed (**base case**).
 /// - `(S, T)`: to retrieve multiple dependencies by recursively resolving each dependency (**inductive case**).
-pub trait GetInput: Sized {
-    fn get_input(manager: &DIManager) -> Option<Self>;
+pub trait GetInput<Output: GetInputKeys>: Sized {
+    fn get_input(manager: &DIManager, key_position: u8) -> Option<Self>;
+}
+
+pub trait GetInputKeys: Sized {
+    fn get_input_keys() -> Vec<String>;
 }

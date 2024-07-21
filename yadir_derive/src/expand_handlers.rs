@@ -62,6 +62,8 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
     }
 
     // get the types of all fields which are annotated with #[di_build]
+    let mut keys = Vec::<String>::new();
+
     let field_types = match &input.fields {
         syn::Fields::Named(fields) => fields.named.iter().collect::<Vec<_>>(),
         syn::Fields::Unnamed(fields) => fields.unnamed.iter().collect::<Vec<_>>(),
@@ -72,8 +74,11 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
         let ty = &field.ty;
 
         match StructField::new(field).is_deps() {
-            Ok(true) => Ok(Some(ty)),
-            Ok(false) => Ok(None),
+            Ok(Some(key)) => {
+                keys.push(key);
+                Ok(Some(ty))
+            }
+            Ok(None) => Ok(None),
             Err(e) => Err(e),
         }
     })
@@ -90,8 +95,8 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
                 let ident = field.ident.as_ref().unwrap();
 
                 match StructField::new(field).is_deps() {
-                    Ok(true) => Ok(Some(ident)),
-                    Ok(false) => Ok(None),
+                    Ok(Some(_)) => Ok(Some(ident)),
+                    Ok(None) => Ok(None),
                     Err(e) => Err(e),
                 }
             })
@@ -108,8 +113,8 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
             .iter()
             .enumerate()
             .map(|(i, field)| match StructField::new(field).is_deps() {
-                Ok(true) => Ok(Some(syn::Ident::new(&format!("field_{}", i), field.span()))),
-                Ok(false) => Ok(None),
+                Ok(Some(_)) => Ok(Some(syn::Ident::new(&format!("field_{}", i), field.span()))),
+                Ok(None) => Ok(None),
                 Err(e) => Err(e),
             })
             .collect::<syn::Result<Vec<_>>>()?
@@ -203,6 +208,12 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
                     #build_method
                 }
             }
+
+            impl GetInputKeys for #input_ident {
+                fn get_input_keys() -> Vec<String> {
+                    vec![#(#keys),*]
+                }
+            }
         },
         (false, true) | (true, false) => quote::quote! {
             #[async_trait]
@@ -212,6 +223,12 @@ pub(crate) fn expand_di_builder(input: ItemStruct) -> syn::Result<TokenStream> {
 
                 async fn build(input: Self::Input) -> Self::Output {
                     #build_method
+                }
+            }
+
+            impl GetInputKeys for #input_ident {
+                fn get_input_keys() -> Vec<String> {
+                    vec![#(#keys),*]
                 }
             }
         },

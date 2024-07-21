@@ -13,7 +13,7 @@ pub use yadir_derive::DIBuilder;
 
 #[cfg(test)]
 mod tests {
-    use crate::core::contracts::DIBuilder;
+    use crate::core::contracts::{DIBuilder, GetInputKeys};
     use crate::core::primitives::{DIManager, DIObj, Lifetime};
     use crate::{deps, let_deps};
     use async_trait::async_trait;
@@ -42,7 +42,7 @@ mod tests {
             "bar".to_string()
         }
     }
-
+    
     #[derive(Clone, DIBuilder)]
     #[build_as(Box<dyn Writer>)]
     struct Baz;
@@ -57,9 +57,9 @@ mod tests {
     #[build_method("new")]
     struct Foo {
         id: Uuid,
-        #[deps]
+        #[deps()]
         printer: Box<dyn Printer>,
-        #[deps]
+        #[deps()]
         writer: Box<dyn Writer>,
     }
 
@@ -148,5 +148,52 @@ mod tests {
 
         let foo = manager.resolve::<Foo>().await;
         assert!(foo.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_di_manager_for_keyed_dependencies() {
+        #[derive(Clone, DIBuilder)]
+        struct FooBar {
+            #[deps(key("my_foo"))]
+            foo: Foo,
+            #[deps()]
+            printer: Box<dyn Printer>,
+        }
+
+        let mut manager = DIManager::default();
+
+        manager
+            .register::<Bar>(Some(Lifetime::Transient))
+            .await
+            .register::<Baz>(Some(Lifetime::Transient))
+            .await
+            .register::<Foo>(Some(Lifetime::Singleton))
+            .await
+            .register_with_key::<Foo>(Some(Lifetime::Singleton), String::from("my_foo"))
+            .await
+            .register::<FooBar>(Some(Lifetime::Transient))
+            .await;
+
+        let foo_bar = manager.resolve::<FooBar>().await;
+        assert_some!(foo_bar.clone());
+
+        let foo_bar = foo_bar.unwrap().extract();
+        assert_eq!(foo_bar.foo.print(), "foo bar baz");
+
+        let foo_with_key = manager
+            .resolve_with_key::<Foo>(String::from("my_foo"))
+            .await;
+        assert_some!(foo_with_key.clone());
+
+        let foo_with_key = foo_with_key.unwrap().extract();
+        assert_eq!(foo_with_key.print(), "foo bar baz");
+
+        let foo = manager.resolve::<Foo>().await;
+        assert_some!(foo.clone());
+
+        let foo = foo.unwrap().extract();
+        assert_eq!(foo.print(), "foo bar baz");
+
+        assert_ne!(foo_with_key.id(), foo.id());
     }
 }

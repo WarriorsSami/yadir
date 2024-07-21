@@ -1,4 +1,4 @@
-use crate::core::contracts::{DIBuilder, GetInput};
+use crate::core::contracts::{DIBuilder, GetInput, GetInputKeys};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -15,11 +15,52 @@ pub enum Lifetime {
     Singleton,
 }
 
-/// A simple type map that stores values by their type.
+/// A simple struct to represent a key for a dependency.
+///
+/// The `Key` struct is used to represent a key for a dependency. The struct has two fields:
+/// - `type_id`: Represents the type of the dependency.
+/// - `code`: Represents an optional string code for the dependency to differentiate between multiple keyed dependencies of the same type.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct Key {
+    pub(crate) type_id: TypeId,
+    pub(crate) code: String,
+}
+
+impl Key {
+    pub(crate) fn new<T>(code: String) -> Self
+    where
+        T: Any + 'static,
+    {
+        Self {
+            type_id: TypeId::of::<T>(),
+            code,
+        }
+    }
+
+    pub(crate) fn new_with_default_code<T>() -> Self
+    where
+        T: Any + 'static,
+    {
+        Self::new::<T>(String::from("default"))
+    }
+}
+
+/// A simple type map that stores values by their type and/or key.
 #[derive(Default)]
-pub struct TypeMap(HashMap<TypeId, (Lifetime, Box<dyn Any>)>);
+pub struct TypeMap(HashMap<Key, (Lifetime, Box<dyn Any>)>);
 
 impl TypeMap {
+    /// Creates a new key for a given type based on the generic type parameter and an optional string code.
+    fn get_key<T>(code: Option<String>) -> Key
+    where
+        T: Any + 'static,
+    {
+        match code {
+            Some(code) => Key::new::<T>(code),
+            None => Key::new_with_default_code::<T>(),
+        }
+    }
+
     /// Inserts a value into the map with its inferred type as the key.
     ///
     /// # Examples
@@ -28,16 +69,16 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42, None);
+    /// map.set(42, None, None);
     ///
-    /// assert_eq!(map.get::<i32>(), Some(&42));
+    /// assert_eq!(map.get::<i32>(None), Some(&42));
     /// ```
-    pub fn set<T>(&mut self, t: T, lifetime: Option<Lifetime>)
+    pub fn set<T>(&mut self, t: T, lifetime: Option<Lifetime>, code: Option<String>)
     where
         T: Any + 'static,
     {
         self.0.insert(
-            TypeId::of::<T>(),
+            Self::get_key::<T>(code),
             (lifetime.unwrap_or_default(), Box::new(t)),
         );
     }
@@ -51,14 +92,14 @@ impl TypeMap {
     ///
     /// let mut map = TypeMap::default();
     ///
-    /// assert_eq!(map.get::<i32>(), None);
+    /// assert_eq!(map.get::<i32>(None), None);
     /// ```
-    pub fn get<T>(&self) -> Option<&T>
+    pub fn get<T>(&self, code: Option<String>) -> Option<&T>
     where
         T: Any + 'static,
     {
         self.0
-            .get(&TypeId::of::<T>())
+            .get(&Self::get_key::<T>(code))
             .map(|(_, boxed)| boxed.downcast_ref::<T>().unwrap())
     }
 
@@ -70,21 +111,21 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42, None);
+    /// map.set(42, None, None);
     ///
-    /// assert_eq!(map.get_mut::<i32>(), Some(&mut 42));
+    /// assert_eq!(map.get_mut::<i32>(None), Some(&mut 42));
     ///
-    /// let mut value = map.get_mut::<i32>().unwrap();
+    /// let mut value = map.get_mut::<i32>(None).unwrap();
     /// *value = 43;
     ///
-    /// assert_eq!(map.get::<i32>(), Some(&43));
+    /// assert_eq!(map.get::<i32>(None), Some(&43));
     /// ```
-    pub fn get_mut<T>(&mut self) -> Option<&mut T>
+    pub fn get_mut<T>(&mut self, code: Option<String>) -> Option<&mut T>
     where
         T: Any + 'static,
     {
         self.0
-            .get_mut(&TypeId::of::<T>())
+            .get_mut(&Self::get_key::<T>(code))
             .map(|(_, boxed)| boxed.downcast_mut::<T>().unwrap())
     }
 
@@ -97,17 +138,17 @@ impl TypeMap {
     ///
     /// let mut map = TypeMap::default();
     ///
-    /// assert_eq!(map.get_lifetime::<i32>(), None);
+    /// assert_eq!(map.get_lifetime::<i32>(None), None);
     ///
-    /// map.set(42, Some(Lifetime::Singleton));
-    /// assert_eq!(map.get_lifetime::<i32>(), Some(Lifetime::Singleton));
+    /// map.set(42, Some(Lifetime::Singleton), None);
+    /// assert_eq!(map.get_lifetime::<i32>(None), Some(Lifetime::Singleton));
     /// ```
-    pub fn get_lifetime<T>(&self) -> Option<Lifetime>
+    pub fn get_lifetime<T>(&self, code: Option<String>) -> Option<Lifetime>
     where
         T: Any + 'static,
     {
         self.0
-            .get(&TypeId::of::<T>())
+            .get(&Self::get_key::<T>(code))
             .map(|(lifetime, _)| *lifetime)
     }
 
@@ -119,16 +160,16 @@ impl TypeMap {
     /// use yadir::core::primitives::TypeMap;
     ///
     /// let mut map = TypeMap::default();
-    /// map.set(42, None);
+    /// map.set(42, None, Some(String::from("my_key")));
     ///
-    /// assert!(map.has::<i32>());
-    /// assert!(!map.has::<String>());
+    /// assert!(map.has::<i32>(Some(String::from("my_key"))));
+    /// assert!(!map.has::<String>(None));
     /// ```
-    pub fn has<T>(&self) -> bool
+    pub fn has<T>(&self, code: Option<String>) -> bool
     where
         T: Any + 'static,
     {
-        self.0.contains_key(&TypeId::of::<T>())
+        self.0.contains_key(&Self::get_key::<T>(code))
     }
 }
 
@@ -192,11 +233,11 @@ impl DIManager {
     where
         T: DIBuilder,
     {
-        let input = T::Input::get_input(self)?;
+        let input = T::Input::get_input(self, 0)?;
         let obj = T::build(input).await;
         let sync_obj = DIObj::new(obj);
         self.0
-            .set::<DIObj<T::Output>>(sync_obj.clone(), Some(Lifetime::Transient));
+            .set::<DIObj<T::Output>>(sync_obj.clone(), Some(Lifetime::Transient), None);
 
         Some(sync_obj)
     }
@@ -234,11 +275,30 @@ impl DIManager {
     where
         T: DIBuilder,
     {
-        let input = T::Input::get_input(self)
+        let input = T::Input::get_input(self, 0)
             .expect("Some input dependencies are missing. Please register them beforehand.");
         let obj = T::build(input).await;
         let sync_obj = DIObj::new(obj);
-        self.0.set::<DIObj<T::Output>>(sync_obj.clone(), lifetime);
+        self.0
+            .set::<DIObj<T::Output>>(sync_obj.clone(), lifetime, None);
+
+        self
+    }
+
+    pub async fn register_with_key<T>(
+        &mut self,
+        lifetime: Option<Lifetime>,
+        key: String,
+    ) -> &mut Self
+    where
+        T: DIBuilder,
+    {
+        let input = T::Input::get_input(self, 0)
+            .expect("Some input dependencies are missing. Please register them beforehand.");
+        let obj = T::build(input).await;
+        let sync_obj = DIObj::new(obj);
+        self.0
+            .set::<DIObj<T::Output>>(sync_obj.clone(), lifetime, Some(key));
 
         self
     }
@@ -276,10 +336,25 @@ impl DIManager {
     where
         T: DIBuilder,
     {
-        match self.0.get_lifetime::<DIObj<T::Output>>() {
+        match self.0.get_lifetime::<DIObj<T::Output>>(None) {
             Some(Lifetime::Transient) => self.build::<T>().await,
             Some(Lifetime::Singleton) => {
-                let obj = self.0.get::<DIObj<T::Output>>().unwrap().extract();
+                let obj = self.0.get::<DIObj<T::Output>>(None).unwrap().extract();
+                let sync_obj = DIObj::new(obj);
+                Some(sync_obj)
+            }
+            None => None,
+        }
+    }
+
+    pub async fn resolve_with_key<T>(&mut self, key: String) -> Option<DIObj<T::Output>>
+    where
+        T: DIBuilder,
+    {
+        match self.0.get_lifetime::<DIObj<T::Output>>(Some(key.clone())) {
+            Some(Lifetime::Transient) => self.build::<T>().await,
+            Some(Lifetime::Singleton) => {
+                let obj = self.0.get::<DIObj<T::Output>>(Some(key)).unwrap().extract();
                 let sync_obj = DIObj::new(obj);
                 Some(sync_obj)
             }
@@ -321,28 +396,78 @@ impl DIManager {
     where
         T: Any + 'static,
     {
-        self.0.has::<T>()
+        self.0.has::<T>(None)
+    }
+
+    /// Checks if the dependency injection manager contains a dependency of a given type and key.
+    ///
+    /// The `has_with_key` method is used to check if the dependency injection manager contains a dependency of a given type and key.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_trait::async_trait;
+    /// use yadir::{deps, let_deps};
+    /// use yadir::core::contracts::{DIBuilder};
+    /// use yadir::core::primitives::{DIObj};
+    /// use yadir::core::primitives::DIManager;
+    /// use yadir_derive::DIBuilder;
+    ///
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Bar;
+    ///
+    /// #[derive(Clone, DIBuilder)]
+    /// struct Foo(#[deps] Bar);
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut manager = DIManager::default();
+    ///
+    ///     manager
+    ///         .register::<Bar>(None).await
+    ///         .register_with_key::<Foo>(None, String::from("my_key")).await;
+    ///
+    ///     assert!(manager.has_with_key::<DIObj<Bar>>(String::from("my_key")));
+    /// }
+    /// ```
+    pub fn has_with_key<T>(&self, key: String) -> bool
+    where
+        T: Any + 'static,
+    {
+        self.0.has::<T>(Some(key))
     }
 }
 
-impl<T: Clone + 'static> GetInput for DIObj<T> {
-    fn get_input(manager: &DIManager) -> Option<Self> {
-        manager.0.get::<Self>().cloned()
+impl<T, Output> GetInput<Output> for DIObj<T>
+where
+    T: Clone + 'static,
+    Output: GetInputKeys,
+{
+    fn get_input(manager: &DIManager, key_position: u8) -> Option<Self> {
+        let key = Output::get_input_keys()
+            .get(key_position as usize)
+            .map(|key| key.to_string());
+        manager.0.get::<Self>(key).cloned()
     }
 }
 
-impl GetInput for () {
-    fn get_input(_: &DIManager) -> Option<Self> {
+impl<Output> GetInput<Output> for ()
+where
+    Output: GetInputKeys,
+{
+    fn get_input(_: &DIManager, _key_position: u8) -> Option<Self> {
         Some(())
     }
 }
 
-impl<S, T> GetInput for (S, T)
+impl<S, T, Output> GetInput<Output> for (S, T)
 where
-    S: GetInput,
-    T: GetInput,
+    S: GetInput<Output>,
+    T: GetInput<Output>,
+    Output: GetInputKeys,
 {
-    fn get_input(manager: &DIManager) -> Option<Self> {
-        S::get_input(manager).and_then(|s| T::get_input(manager).map(|t| (s, t)))
+    fn get_input(manager: &DIManager, key_position: u8) -> Option<Self> {
+        S::get_input(manager, key_position)
+            .and_then(|s| T::get_input(manager, key_position + 1).map(|t| (s, t)))
     }
 }

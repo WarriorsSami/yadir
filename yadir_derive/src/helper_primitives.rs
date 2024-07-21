@@ -27,19 +27,35 @@ impl<'f> StructField<'f> {
         Self { field }
     }
 
-    pub(crate) fn is_deps(&self) -> syn::Result<bool> {
+    pub(crate) fn is_deps(&self) -> syn::Result<Option<String>> {
         let deps_attrs = self
             .field
             .attrs
             .iter()
             .filter(|attr| attr.path().is_ident("deps"))
-            .collect::<Vec<_>>();
+            .map(|attr| {
+                let mut key = None::<String>;
+
+                attr.parse_nested_meta(|meta| {
+                    if meta.path.is_ident("key") {
+                        let key_value;
+                        syn::parenthesized!(key_value in meta.input);
+                        let lit = key_value.parse::<syn::LitStr>()?;
+                        key = Some(lit.value());
+                    }
+
+                    Ok(())
+                })?;
+
+                Ok(key.unwrap_or(String::from("default")))
+            })
+            .collect::<syn::Result<Vec<_>>>()?;
 
         match deps_attrs.len() {
-            0 => Ok(false),
-            1 => Ok(true),
+            0 => Ok(None),
+            1 => Ok(Some(deps_attrs[0].clone())),
             _ => Err(syn::Error::new_spanned(
-                deps_attrs[1].path(),
+                self.field,
                 "Multiple #[deps] attributes are redundant",
             )),
         }
