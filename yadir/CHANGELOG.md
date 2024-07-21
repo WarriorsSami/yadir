@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [ ] Factory dependencies
 - [ ] DSL for registering dependencies
 
+## [0.3.1](https://github.com/WarriorsSami/yadir/compare/yadir-v0.3.0...yadir-v0.3.1) - 2024-07-21
+
+### Other
+- *(yadir_derive)* report syn::Error instead of panicking
+- *(yadir)* show complete examples for rustdocs in di manager and update yadir version in README.md
+
 ## [0.3.0](https://github.com/WarriorsSami/yadir/compare/yadir-v0.2.3...yadir-v0.3.0) - 2024-07-20
 
 ### Added
