@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.4...yadir_derive-v0.1.5) - 2024-07-21
+
+### Fixed
+- *(yadir_derive)* allow DIBuilder derive macro to work for default build method on structs with no fields marked as deps too
+
+### Other
+- Merge remote-tracking branch 'origin/master'
+
 ## [0.1.4](https://github.com/WarriorsSami/yadir/compare/yadir_derive-v0.1.3...yadir_derive-v0.1.4) - 2024-07-21
 
 ### Other
